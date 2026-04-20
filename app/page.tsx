@@ -6,7 +6,7 @@ interface Todo {
   id: number;
   text: string;
   completed: boolean;
-  deadline?: string;
+  deadline: string;
 }
 
 function deadlineLabel(deadline?: string): { text: string; className: string } | null {
@@ -25,11 +25,19 @@ export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [input, setInput] = useState("");
   const [deadline, setDeadline] = useState("");
+  const [errors, setErrors] = useState<{ text?: string; deadline?: string }>({});
 
   const addTodo = () => {
     const text = input.trim();
-    if (!text) return;
-    setTodos([...todos, { id: Date.now(), text, completed: false, deadline: deadline || undefined }]);
+    const newErrors: { text?: string; deadline?: string } = {};
+    if (!text) newErrors.text = "할 일을 입력하세요.";
+    if (!deadline) newErrors.deadline = "작업 기한을 선택하세요.";
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
+    setTodos([...todos, { id: Date.now(), text, completed: false, deadline }]);
     setInput("");
     setDeadline("");
   };
@@ -51,38 +59,44 @@ export default function Home() {
 
         <div className="flex flex-col gap-2 mb-4">
           <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && addTodo()}
-              placeholder="할 일을 입력하세요"
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
+            <div className="flex-1 flex flex-col gap-1">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => { setInput(e.target.value); setErrors((p) => ({ ...p, text: undefined })); }}
+                onKeyDown={(e) => e.key === "Enter" && addTodo()}
+                placeholder="할 일을 입력하세요"
+                className={`w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${errors.text ? "border-red-400" : "border-gray-300"}`}
+              />
+              {errors.text && <p className="text-xs text-red-500">{errors.text}</p>}
+            </div>
             <button
               onClick={addTodo}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors self-start"
             >
               추가
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500 whitespace-nowrap">작업 기한</label>
-            <input
-              type="date"
-              value={deadline}
-              min={today}
-              onChange={(e) => setDeadline(e.target.value)}
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700"
-            />
-            {deadline && (
-              <button
-                onClick={() => setDeadline("")}
-                className="text-xs text-gray-400 hover:text-gray-600"
-              >
-                초기화
-              </button>
-            )}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-500 whitespace-nowrap">작업 기한 <span className="text-red-400">*</span></label>
+              <input
+                type="date"
+                value={deadline}
+                min={today}
+                onChange={(e) => { setDeadline(e.target.value); setErrors((p) => ({ ...p, deadline: undefined })); }}
+                className={`flex-1 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-700 ${errors.deadline ? "border-red-400" : "border-gray-300"}`}
+              />
+              {deadline && (
+                <button
+                  onClick={() => setDeadline("")}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  초기화
+                </button>
+              )}
+            </div>
+            {errors.deadline && <p className="text-xs text-red-500 pl-14">{errors.deadline}</p>}
           </div>
         </div>
 
